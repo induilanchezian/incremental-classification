@@ -15,19 +15,34 @@ import argparse
 import json
 import numpy as np 
 
+from incremental_train_binary import incremental_loss, IncrementalModel 
+
+incremental_model = IncrementalModel()
+incremental_model.set_params(None, None, None, None,
+                             512, 512, '../models/incremental/incremental_1',
+                             None, 'config.txt')
+incremental_model.get_models_list()
+incremental_model.get_latest_model()
+incremental_model.get_base_model()
+incremental_model.previous_model()
+
 def evaluation_report(data_dir, checkpoint, report_file, batch_size, input_shape, extract_features=False, feature_file=None):
-  nb_test_samples = np.sum([len(glob.glob(data_dir+'/'+i+'/*.jpeg') for i in os.listdir(data_dir)])
+  nb_test_samples = np.sum([len(glob.glob(data_dir+'/'+i+'/*.jpeg')) for i in os.listdir(data_dir)])
   test_steps = nb_test_samples // batch_size
-  model = load_model(checkpoint)
+
+  if 'incremental' in checkpoint:
+    model = load_model(checkpoint, custom_objects={'loss':incremental_loss(incremental_model)})
+  else:
+    model = load_model(checkpoint)
   
   image_width, image_height = input_shape  
 
   test_datagen = ImageDataGenerator(rescale=1./255)
-  test_generator = test_datagen.flow_fom_directory(
+  test_generator = test_datagen.flow_from_directory(
       data_dir,
-      target_size=(img_width, img_height),
+      target_size=(image_width, image_height),
       batch_size=batch_size,
-      class_mode=binary,
+      class_mode='binary',
       shuffle=False)
   
   predictions = model.predict_generator(test_generator, steps=test_steps)
@@ -53,12 +68,10 @@ def evaluation_report(data_dir, checkpoint, report_file, batch_size, input_shape
   report['Sensitivity'] = float(tp)/float(tp+fn)
   report['Specificity'] = float(tn)/float(tn+fp)
   report['AUC'] = roc_auc
-  report['fpr'] = fpr
-  report['tpr'] = tpr
-  json = json.dumps(dict)
-  f = open(report_file, "w")
-  f.write(json)
-  f.close()
+  #report['fpr'] = fpr
+  #report['tpr'] = tpr
+  with open(report_file, 'w') as fp:
+    json.dump(report, fp)
 
   print('Model report. Report saved to: %s'%(report_file))
   print('Accuracy: %.2f'%report['Accuracy'])

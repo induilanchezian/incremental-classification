@@ -33,14 +33,14 @@ class LossHistory(Callback):
 def model(input_shape):
   model = Sequential()
   model.add(Cropping2D(cropping=(2,4),input_shape=input_shape))
-  #model.add(Conv2D(32, (7,7), strides=(2,2), padding='same', kernel_initializer=Orthogonal(1.0),
+  model.add(Conv2D(32, (7,7), strides=(2,2), padding='same', kernel_initializer=Orthogonal(1.0),
+            bias_initializer=Constant(0.1)))
+  #model.add(Conv2D(32, (3,3), strides=(1,1), padding='same', kernel_initializer=Orthogonal(1.0),
   #          bias_initializer=Constant(0.1)))
-  model.add(Conv2D(32, (3,3), strides=(1,1), padding='same', kernel_initializer=Orthogonal(1.0),
-            bias_initializer=Constant(0.1)))
-  model.add(Conv2D(32, (3,3), strides=(1,1), padding='same', kernel_initializer=Orthogonal(1.0),
-            bias_initializer=Constant(0.1)))
-  model.add(Conv2D(32, (3,3), strides=(2,2), padding='same', kernel_initializer=Orthogonal(1.0),
-            bias_initializer=Constant(0.1)))
+  #model.add(Conv2D(32, (3,3), strides=(1,1), padding='same', kernel_initializer=Orthogonal(1.0),
+  #          bias_initializer=Constant(0.1)))
+  #model.add(Conv2D(32, (3,3), strides=(2,2), padding='same', kernel_initializer=Orthogonal(1.0),
+  #          bias_initializer=Constant(0.1)))
   model.add(LeakyReLU(0.5))
   model.add(MaxPooling2D(pool_size=(3,3), strides=(2,2)))
 
@@ -104,18 +104,18 @@ def model(input_shape):
   model.add(GlobalMaxPooling2D())
   model.add(Dense(1, kernel_initializer=Orthogonal(1.0), bias_initializer=Constant(0.1), activation='sigmoid'))
 
-  return model
-
-def train(model, train_data_dir, validation_data_dir, epochs, batch_size, input_shape, weights_path, loss_file):
-  nb_train_samples = np.sum([len(glob.glob(train_data_dir+'/'+i+'/*.jpeg') for i in os.listdir(train_dir)])
-  nb_validation_samples = np.sum([len(glob.glob(validation_data_dir+'/'+i+'/*.jpeg') for i in os.listdir(validation_dir)])
-
-  img_width, img_height = input_shape
-
   sgd = SGD(lr=0.01, momentum=0.9, nesterov=True)
   model.compile(loss='binary_crossentropy',
                 optimizer=sgd,
                 metrics=['accuracy'])
+
+  return model
+
+def train(model, train_data_dir, validation_data_dir, epochs, batch_size, input_shape, weights_path, loss_file):
+  nb_train_samples = np.sum([len(glob.glob(train_data_dir+'/'+i+'/*.jpeg')) for i in os.listdir(train_data_dir)])
+  nb_validation_samples = np.sum([len(glob.glob(validation_data_dir+'/'+i+'/*.jpeg')) for i in os.listdir(validation_data_dir)])
+
+  img_width, img_height = input_shape
 
   # this is the augmentation configuration we will use for training
   train_datagen = ImageDataGenerator(
@@ -140,8 +140,8 @@ def train(model, train_data_dir, validation_data_dir, epochs, batch_size, input_
       batch_size=batch_size,
       class_mode='binary')
 
- checkpoint = ModelCheckpoint(weights_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
- reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1,
+  checkpoint = ModelCheckpoint(weights_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+  reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1,
                                patience=5, min_lr=1e-4)
   history = LossHistory()
   callbacks_list = [checkpoint, reduce_lr, history]
@@ -157,7 +157,7 @@ def train(model, train_data_dir, validation_data_dir, epochs, batch_size, input_
   
   np.savetxt(loss_file, history.losses) 
  
-if __name__ == __main__():
+if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--train_dir', type=str, help='Path to training data directory')
   parser.add_argument('--validation_dir', type=str, help='Path to validation data directory')
