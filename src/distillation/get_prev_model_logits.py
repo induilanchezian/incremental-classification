@@ -21,6 +21,9 @@ if __name__ == '__main__':
     parser.add_argument('--logits_file',
             type=str,
             help='File to store the logits dictionary')
+    parser.add_argument('--prev_model',
+            type=str,
+            help='File path to saved model')
     
     args = parser.parse_args()
     
@@ -40,7 +43,7 @@ if __name__ == '__main__':
     nb_samples = np.sum([len(glob.glob(args.data_dir+'/'+i+'/*.jpeg')) for i in os.listdir(args.data_dir)])
     batch_size = 64
     num_batches = nb_samples // batch_size
-    model = load_model('../../models/base/cnn-fundus.h5')
+    model = load_model(args.prev_model)
     dense_weights = model.layers[-1].get_weights()
     model.pop()
     features = model.layers[-1].output

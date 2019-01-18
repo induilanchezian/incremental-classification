@@ -20,6 +20,7 @@ import keras.backend as K
 
 try:
     from PIL import Image as pil_image
+    from PIL import ImageEnhance
 except ImportError:
     pil_image = None
 
@@ -154,6 +155,54 @@ def random_zoom(x, zoom_range, row_axis=1, col_axis=2, channel_axis=0,
     transform_matrix = transform_matrix_offset_center(zoom_matrix, h, w)
     x = apply_transform(x, transform_matrix, channel_axis, fill_mode, cval)
     return x
+
+
+def apply_brightness_shift(x, brightness):
+    """Performs a brightness shift.
+
+    # Arguments
+        x: Input tensor. Must be 3D.
+        brightness: Float. The new brightness value.
+        channel_axis: Index of axis for channels in the input tensor.
+
+    # Returns
+        Numpy image tensor.
+
+    # Raises
+        ValueError if `brightness_range` isn't a tuple.
+    """
+    if ImageEnhance is None:
+        raise ImportError('Using brightness shifts requires PIL. '
+                          'Install PIL or Pillow.')
+    x = array_to_img(x)
+    x = imgenhancer_Brightness = ImageEnhance.Brightness(x)
+    x = imgenhancer_Brightness.enhance(brightness)
+    x = img_to_array(x)
+    return x
+
+
+def random_brightness(x, brightness_range):
+    """Performs a random brightness shift.
+
+    # Arguments
+        x: Input tensor. Must be 3D.
+        brightness_range: Tuple of floats; brightness range.
+        channel_axis: Index of axis for channels in the input tensor.
+
+    # Returns
+        Numpy image tensor.
+
+    # Raises
+        ValueError if `brightness_range` isn't a tuple.
+    """
+    if len(brightness_range) != 2:
+        raise ValueError(
+            '`brightness_range should be tuple or list of two floats. '
+            'Received: %s' % (brightness_range,))
+
+    u = np.random.uniform(brightness_range[0], brightness_range[1])
+    return apply_brightness_shift(x, u)
+
 
 
 def random_channel_shift(x, intensity, channel_axis=0):
@@ -388,6 +437,7 @@ class ImageDataGenerator(object):
                  zca_whitening=False,
                  zca_epsilon=1e-6,
                  rotation_range=0.,
+                 brightness_range=None,
                  width_shift_range=0.,
                  height_shift_range=0.,
                  shear_range=0.,
@@ -447,6 +497,14 @@ class ImageDataGenerator(object):
             raise ValueError('`zoom_range` should be a float or '
                              'a tuple or list of two floats. '
                              'Received arg: ', zoom_range)
+            
+        if brightness_range is not None:
+            if (not isinstance(brightness_range, (tuple, list)) or 
+                    len(brightness_range) != 2):
+                raise ValueError(
+                        '`brightness_range should be tuple or list of two floats. '
+                        'Received: %s' % (brightness_range,))
+        self.brightness_range = brightness_range
 
     def flow(self, x, y=None, batch_size=32, shuffle=True, seed=None,
              save_to_dir=None, save_prefix='', save_format='png'):
@@ -571,6 +629,10 @@ class ImageDataGenerator(object):
             zx, zy = 1, 1
         else:
             zx, zy = np.random.uniform(self.zoom_range[0], self.zoom_range[1], 2)
+            
+        brightness = None
+        if self.brightness_range is not None:
+            brightness = np.random.uniform(self.brightness_range[0], self.brightness_range[1])
 
         transform_matrix = None
         if theta != 0:
@@ -614,6 +676,9 @@ class ImageDataGenerator(object):
         if self.vertical_flip:
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_row_axis)
+
+        if brightness is not None:
+            x = apply_brightness_shift(x, brightness)
 
         return x
 
