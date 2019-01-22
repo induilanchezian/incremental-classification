@@ -10,22 +10,22 @@ BATCH_SIZE=64
 IMAGE_HEIGHT=512
 IMAGE_WIDTH=512
 PREV_MODEL=../../models/base/modelv1-KaggleDRD-50ep-base.h5
-CKPT=../../models/incremental/modelv1-KaggleDRD-50ep-1reg-incremental1-l2weight-transfer.h5
+CKPT=../../models/incremental/modelv1-KaggleDRD-50ep-incremental1-ewc.h5
 LOG=losses_1.txt
 
-REPORT=modelv1-KaggleDRD-50ep-1reg-incremental1-l2weight-transfer-test.json
-ROC=modelv1-KaggleDRD-50ep-1reg-incremental1-l2weight-transfer-test.png
+REPORT=modelv1-KaggleDRD-50ep-incremental1-ewc-test.json
+ROC=modelv1-KaggleDRD-50ep-incremental1-ewc-test.png
 
-TRAIN_REPORT=modelv1-KaggleDRD-50ep-1reg-incremental1-l2weight-transfer-inc1-train.json
-TRAIN_ROC=modelv1-KaggleDRD-50ep-1reg-incremental1-l2weight-transfer-inc1-train.png
+TRAIN_REPORT=modelv1-KaggleDRD-50ep-incremental1-ewc-inc1-train.json
+TRAIN_ROC=modelv1-KaggleDRD-50ep-incremental1-ewc-inc1-train.png
 
-BASE_TRAIN_REPORT=modelv1-KaggleDRD-50ep-1reg-incremental1-l2weight-transfer-base-train.json
-BASE_TRAIN_ROC=modelv1-KaggleDRD-50ep-1reg-incremental1-l2weight-transfer-base-train.png
+BASE_TRAIN_REPORT=modelv1-KaggleDRD-50ep-incremental1-ewc-base-train.json
+BASE_TRAIN_ROC=modelv1-KaggleDRD-50ep-incremental1-ewc-base-train.png
 
-LAMBDA=1
+LAMBDA=0.1
 
-#train using l2weight-transfer on incremental data
-python l2_transfer_incremental_train.py --train_dir $TRAIN_DIR --validation_dir $VAL_DIR --prev_model $PREV_MODEL --num_epochs $EPOCHS --batch_size $BATCH_SIZE --reg_lambda $LAMBDA --image_height $IMAGE_HEIGHT --image_width $IMAGE_WIDTH --checkpoint_file $CKPT --log_file $LOG
+#train using ewc on incremental data
+#python ewc_incremental_train.py --train_dir $TRAIN_DIR --validation_dir $VAL_DIR --prev_model $PREV_MODEL --num_epochs $EPOCHS --batch_size $BATCH_SIZE --reg_const $LAMBDA --image_height $IMAGE_HEIGHT --image_width $IMAGE_WIDTH --checkpoint_file $CKPT --log_file $LOG
 
 #evaluate model on held-out common test set
 python evaluate.py --data_dir $TEST_DIR --model $CKPT --output_file $REPORT --batch_size $BATCH_SIZE --image_width $IMAGE_WIDTH --image_height $IMAGE_HEIGHT --roc_file $ROC
