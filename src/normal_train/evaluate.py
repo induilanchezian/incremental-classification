@@ -8,16 +8,51 @@ from keras.initializers import Orthogonal, Constant
 from keras.callbacks import ModelCheckpoint, Callback, ReduceLROnPlateau
 from matplotlib import pyplot as plt
 
-from sklearn.metrics import roc_curve, auc, confusion_matrix
+from sklearn.metrics import roc_curve, auc, confusion_matrix, accuracy_score
 import os
 import glob
 import argparse
 import json
 import numpy as np 
+import itertools
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+  """
+  This function prints and plots the confusion matrix.
+  Normalization can be applied by setting `normalize=True`.
+  """
+  if normalize:
+    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    print("Normalized confusion matrix")
+  else:
+    print('Confusion matrix, without normalization')
+
+  print(cm)
+
+  plt.imshow(cm, interpolation='nearest', cmap=cmap)
+  plt.title(title)
+  plt.colorbar()
+  tick_marks = np.arange(len(classes))
+  plt.xticks(tick_marks, classes, rotation=45)
+  plt.yticks(tick_marks, classes)
+
+  fmt = '.2f' if normalize else 'd'
+  thresh = cm.max() / 2.
+  for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    plt.text(j, i, format(cm[i, j], fmt),
+              horizontalalignment="center",
+              color="white" if cm[i, j] > thresh else "black")
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
 
 
 def evaluation_report(data_dir, checkpoint, report_file, batch_size, input_shape, extract_features=False, feature_file=None, roc_file=None):
-  nb_test_samples = np.sum([len(glob.glob(data_dir+'/'+i+'/*.jpeg')) for i in os.listdir(data_dir)])
+  classes = ['0','1']#os.listdir(data_dir)
+  nb_test_samples = np.sum([len(glob.glob(data_dir+'/'+i+'/*.jpeg')) for i in classes])
   test_steps = nb_test_samples // batch_size
 
   model = load_model(checkpoint)
@@ -30,6 +65,7 @@ def evaluation_report(data_dir, checkpoint, report_file, batch_size, input_shape
       target_size=(image_width, image_height),
       batch_size=batch_size,
       class_mode='binary',
+      classes=['0','1'],
       shuffle=False)
   
   predictions = model.predict_generator(test_generator, steps=test_steps)
@@ -37,6 +73,11 @@ def evaluation_report(data_dir, checkpoint, report_file, batch_size, input_shape
 
   y_pred = predictions > 0.5
   true_labels = test_generator.classes[:len(y_pred)]
+  
+  np.save('misclassified1.npy', predictions[np.logical_and(true_labels == 0, y_pred == 1)])
+  np.save('misclassified0.npy', predictions[np.logical_and(true_labels == 1, y_pred == 0)])
+  np.save('classified0.npy', predictions[np.logical_and(true_labels == 0, y_pred == 0)])
+  np.save('classified1.npy', predictions[np.logical_and(true_labels == 1, y_pred == 1)])
 
   fpr, tpr, thresholds = roc_curve(true_labels, predictions)
   roc_auc = auc(fpr, tpr)
@@ -50,8 +91,15 @@ def evaluation_report(data_dir, checkpoint, report_file, batch_size, input_shape
   fn = cm[1][0]
   tp = cm[1][1]
 
+  print(cm)
+
+  plt.figure()
+  plot_confusion_matrix(cm, classes=[0,1], normalize=True,
+                      title='Normalized confusion matrix')
+  plt.show()
+
   report = {}
-  report['Accuracy'] = float(tp+tn)/float(tp+tn+fp+fn) 
+  report['Accuracy'] = accuracy_score(true_labels, y_pred)
   report['Sensitivity'] = float(tp)/float(tp+fn)
   report['Specificity'] = float(tn)/float(tn+fp)
   report['AUC'] = roc_auc
@@ -87,7 +135,7 @@ def evaluation_report(data_dir, checkpoint, report_file, batch_size, input_shape
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic ('+roc_title+')')
+    plt.title('Receiver operating characteristic \n ('+roc_title+')')
     plt.legend(loc="lower right")
     #plt.show()
     plt.savefig(roc_file)

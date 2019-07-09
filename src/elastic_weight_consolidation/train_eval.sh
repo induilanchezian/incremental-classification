@@ -10,7 +10,7 @@ BATCH_SIZE=64
 IMAGE_HEIGHT=512
 IMAGE_WIDTH=512
 PREV_MODEL=../../models/base/modelv1-KaggleDRD-50ep-base.h5
-CKPT=../../models/incremental/modelv1-KaggleDRD-50ep-incremental1-ewc.h5
+CKPT=../../models/incremental/binary_ewc_conv_fixed.h5
 LOG=losses_1.txt
 
 REPORT=modelv1-KaggleDRD-50ep-incremental1-ewc-test.json
