@@ -56,7 +56,7 @@ mock>=2.0.0
 nbconvert>=5.4.0
 nbformat>=4.4.0
 netifaces>=0.10.4
-notebook~>5.7.4
+notebook>=5.7.4
 numexpr>=2.6.9
 numpy>=1.15.4
 oauth>=1.0.1
@@ -87,12 +87,12 @@ python-apt>=1.6.3
 python-dateutil>=2.7.5
 python-debian>=0.1.32
 pytz>=2018.3
-pyxdg~>0.25
+pyxdg>=0.26
 PyYAML>=3.13
 pyzmq>=17.1.2
 qtconsole>=4.4.3
 reportlab>=3.4.0
-requests~>2.18.4
+requests>=2.20.0
 requests-unixsocket>=0.1.5
 scikit-learn>=0.20.2
 scipy>=1.2.0
@@ -106,7 +106,7 @@ system-service>=0.3
 systemd-python>=234
 tables>=3.5.1
 tensorboard>=1.12.2
-tensorflow~>1.12.0
+tensorflow>=1.12.0
 termcolor>=1.1.0
 terminado>=0.8.1
 testpath>=0.4.2
